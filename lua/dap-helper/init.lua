@@ -7,7 +7,7 @@ local internals = require("dap-helper.internals")
 
 local M = {}
 
-local daic0r_dap_helper = vim.api.nvim_create_augroup("DAIC0R_DAP_HELPER", {
+local humpangle_dap_helper = vim.api.nvim_create_augroup("HUMPANGLE_DAP_HELPER", {
    clear = true
 })
 
@@ -88,7 +88,7 @@ function M.setup()
          -- breakpoints that reference non-existing lines
          internals.save_breakpoints()
       end,
-      group = daic0r_dap_helper
+      group = humpangle_dap_helper
    })
    vim.api.nvim_create_autocmd("BufReadPost", {
       pattern = "*",
@@ -100,7 +100,7 @@ function M.setup()
          internals.load_breakpoints()
          internals.load_watches()
       end,
-      group = daic0r_dap_helper
+      group = humpangle_dap_helper
    })
 end
 

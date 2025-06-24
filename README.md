@@ -8,7 +8,7 @@ Neovim Plugin that provides some convenience functions for nicer debugging with 
 ### lazy.nvim
 ```lua
 {
-  'daic0r/dap-helper.nvim',
+  'humpangle/dap-helper.nvim',
   dependencies = { "rcarriga/nvim-dap-ui", "mfussenegger/nvim-dap" },
   config = function()
     require("dap-helper").setup()
