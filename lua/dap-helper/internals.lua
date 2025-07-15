@@ -100,11 +100,14 @@ function M.load_from_json_file(name_data, key)
   end, key)
 end
 
-function M.save_watches()
-  local dapui = require("dapui")
-
+function M.save_watches(plugin_opts)
   local curbuf = vim.api.nvim_get_current_buf()
   local filename = vim.api.nvim_buf_get_name(curbuf)
+  if M.is_invalid_filename({ file = filename }, plugin_opts) then
+    return
+  end
+
+  local dapui = require("dapui")
 
   M.update_json_file("watches", dapui.elements.watches.get(), filename)
 end
@@ -126,16 +129,19 @@ function M.load_watches()
   end
 end
 
-function M.save_breakpoints()
-  local bps = require("dap.breakpoints")
-
+function M.save_breakpoints(plugin_opts)
   local curbuf = vim.api.nvim_get_current_buf()
+  local filename = vim.api.nvim_buf_get_name(curbuf)
+  if M.is_invalid_filename({ file = filename }, plugin_opts) then
+    return
+  end
+
+  local bps = require("dap.breakpoints")
 
   local bufbps = bps.get(curbuf)
   --local _,bpsextracted = pairs(bufbps)(bufbps)
   local bpsextracted = bufbps[curbuf]
 
-  local filename = vim.api.nvim_buf_get_name(curbuf)
   M.update_json_file("breakpoints", bpsextracted, filename)
 end
 
@@ -172,8 +178,20 @@ function M.compare_args(args1, args2)
   return true
 end
 
-function M.is_invalid_filename(bufnr)
-  return vim.api.nvim_get_option_value("buftype", { buf = bufnr }) ~= ""
+---@param opts table
+---@param plugin_opts table
+---@return boolean
+function M.is_invalid_filename(opts, plugin_opts)
+  if opts.file == "" then
+    return true
+  end
+
+  local cb = plugin_opts.is_invalid_filename
+  if cb then
+    return cb(opts.file)
+  end
+
+  return false
 end
 
 function M.get_filetype(bufnr)

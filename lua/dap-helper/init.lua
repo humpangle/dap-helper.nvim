@@ -13,7 +13,13 @@ local humpangle_dap_helper = vim.api.nvim_create_augroup("HUMPANGLE_DAP_HELPER",
 
 local dap = require("dap")
 
-function M.setup()
+---@class daHelper.PluginOpts
+---@field is_invalid_filename function
+
+---@param plugin_opts? daHelper.PluginOpts
+function M.setup(plugin_opts)
+  plugin_opts = plugin_opts or {}
+
   vim.api.nvim_create_user_command("DapHelperSetLaunchArgs", function(_arg)
     local entry = internals.load_from_json_file("args")
     local opts = { prompt = "Launch arguments: " }
@@ -77,23 +83,23 @@ function M.setup()
   vim.api.nvim_create_autocmd("BufUnload", {
     pattern = "*",
     callback = function(opts)
-      if internals.is_invalid_filename(opts.buf) then
+      if internals.is_invalid_filename(opts, plugin_opts) then
         return
       end
-      internals.save_watches()
+      internals.save_watches(plugin_opts)
       if vim.api.nvim_get_option_value("modified", { buf = opts.buf }) then
         return
       end
       -- Only save breakpoints if buffer is unmodified to make sure we save no
       -- breakpoints that reference non-existing lines
-      internals.save_breakpoints()
+      internals.save_breakpoints(plugin_opts)
     end,
     group = humpangle_dap_helper,
   })
   vim.api.nvim_create_autocmd("BufReadPost", {
     pattern = "*",
     callback = function(opts)
-      if internals.is_invalid_filename(opts.buf) then
+      if internals.is_invalid_filename(opts, plugin_opts) then
         return
       end
       M.set_launch_args(internals.get_filetype(opts.buf), M.get_launch_args())
