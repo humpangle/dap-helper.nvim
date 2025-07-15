@@ -49,55 +49,55 @@ end
 -- Loads data from json file and executes action on it
 --
 -- @param filename: string (path to file)
--- @param name_data: string (name of the data entry to be stored in the json)
+-- @param sub_key: string (name of the data entry to be stored in the json)
 -- @param action: function (function to be executed on the data entry)
 -- @return boolean, table (boolean: whether the data was modified; table: the modified data)
 -- @param key: string (main key to store this data under; default: .git dir location
 -- /current directory)
 -- @return table
-local function load_entry_from_file_and(filename, name_data, action, key)
+local function load_entry_from_file_and(filename, sub_key, action, main_key)
   local data = load_json_file(filename)
 
-  key = key or get_dir_key(filename)
+  main_key = main_key or get_dir_key(filename)
 
-  local entry = data[key]
+  local entry = data[main_key]
   if not entry then
-    data[key] = {}
-    entry = data[key]
+    data[main_key] = {}
+    entry = data[main_key]
   end
-  entry[name_data] = entry[name_data] or {}
+  entry[sub_key] = entry[sub_key] or {}
 
-  local modified, modified_entry = action(entry[name_data])
+  local modified, modified_entry = action(entry[sub_key])
   if modified then
-    entry[name_data] = modified_entry
+    entry[sub_key] = modified_entry
     return save_to_json(filename, data)
   end
-  return entry[name_data]
+  return entry[sub_key]
 end
 
 -- Updates data in json file
 --
--- @param name_data: string (name of the data entry to be stored in the json)
+-- @param sub_key: string (name of the data entry to be stored in the json)
 -- @param data: table (data to be stored under the entry)
 -- @param key: string (main key to store this data under; default: .git dir location
 -- /current directory)
 -- @return boolean
-function M.update_json_file(name_data, data, key)
-  return load_entry_from_file_and(M.get_config_file(), name_data, function(entry)
+function M.update_json_file(sub_key, data, main_key)
+  return load_entry_from_file_and(M.get_config_file(), sub_key, function(entry)
     return true, data
-  end, key)
+  end, main_key)
 end
 
 -- Loads data from json file
 --
--- @param name_data: string (name of the data entry stored in the json)
+-- @param sub_key: string (name of the data entry stored in the json)
 -- @param key: string (main key to store this data under; default: .git dir location
 -- /current directory)
 -- @return table
-function M.load_from_json_file(name_data, key)
-  return load_entry_from_file_and(M.get_config_file(), name_data, function(entry)
+function M.load_from_json_file(sub_key, main_key)
+  return load_entry_from_file_and(M.get_config_file(), sub_key, function(entry)
     return false
-  end, key)
+  end, main_key)
 end
 
 function M.save_watches(plugin_opts)
