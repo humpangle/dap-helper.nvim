@@ -22,7 +22,7 @@ function M.setup(plugin_opts)
   vim.g.___dap___helper___ = plugin_opts
 
   vim.api.nvim_create_user_command("DapHelperSetLaunchArgs", function()
-    local entry = internals.load_from_json_file("args")
+    local entry = internals.get_entry_for_file("args")
     local opts = { prompt = "Launch arguments: " }
     -- Check if file exists and data could be loaded
     -- If not, create default entry for this directory
@@ -54,7 +54,7 @@ function M.setup(plugin_opts)
   end, {})
 
   vim.api.nvim_create_user_command("DapHelperSetBuildCommand", function()
-    local entry = internals.load_from_json_file("buildCmd")
+    local entry = internals.get_entry_for_file("buildCmd")
     local opts = { prompt = "Build command: " }
     if type(entry) == "string" then
       opts.default = entry
@@ -75,7 +75,7 @@ function M.setup(plugin_opts)
   end, {})
 
   vim.api.nvim_create_user_command("DapHelperReset", function()
-    local succ, str = os.remove(internals.get_config_file())
+    local succ, str = os.remove(internals.compute_json_filename_for_cwd())
     if not succ then
       vim.notify("Error resetting the configuration: " .. str, vim.log.levels.ERROR)
     end
@@ -98,7 +98,7 @@ function M.setup(plugin_opts)
 end
 
 function M.get_launch_args()
-  return internals.load_from_json_file("args")
+  return internals.get_entry_for_file("args")
 end
 
 function M.set_launch_args(filetype, args)
@@ -126,7 +126,7 @@ function M.set_startup_program(filetype, filepath)
 end
 
 function M.get_build_cmd()
-  local buildcmd = internals.load_from_json_file("buildCmd")
+  local buildcmd = internals.get_entry_for_file("buildCmd")
   if type(buildcmd) == "table" then
     return nil
   end
