@@ -1,30 +1,30 @@
 local M = {}
 
-local function get_config_path()
-  return vim.fn.stdpath("data")
+local function my_current_cwd()
+  return vim.fn.fnamemodify(vim.fn.getcwd(), ":p:h")
 end
 
-local function get_dir_key(filename)
-  -- None found? Use current directory as key
-  local git_dir = M.get_git_dir(filename)
-  if not git_dir then
-    return vim.loop.cwd()
-  end
-  -- Return base path (with the .git stripped off)
-  return vim.fs.dirname(git_dir)
+local function strip_cwd(filename)
+  local pattern = "^" .. vim.pesc(my_current_cwd() .. "/")
+  return filename:gsub(pattern, "")
 end
 
 function M.get_config_file()
-  return vim.fs.joinpath(get_config_path(), "dap-helper.json")
+  local json_dir = vim.fn.stdpath("state") .. "/dap-helper"
+  local sanitized_path = vim.fn.substitute(my_current_cwd(), "[\\/]", "%", "g")
+  if vim.fn.isdirectory(json_dir) == 0 then
+    vim.fn.mkdir(json_dir, "p")
+  end
+  return json_dir .. "/" .. sanitized_path .. ".json"
 end
 
 -- Saves data to json file
 --
--- @param filename: string (path to file)
+-- @param json_filename: string (path to file)
 -- @param args: table (data to be stored in the json)
 -- @return boolean
-local function save_to_json(filename, args)
-  local f = io.open(filename, "w")
+local function save_to_json(json_filename, args)
+  local f = io.open(strip_cwd(json_filename), "w")
   if not f then
     return false
   end
@@ -34,8 +34,8 @@ local function save_to_json(filename, args)
   return true
 end
 
-local function load_json_file(filename)
-  local f = io.open(filename, "r")
+local function load_json_file(json_filename)
+  local f = io.open(json_filename, "r")
   local data = {}
   if f then
     local content = f:read("*a")
@@ -56,9 +56,10 @@ end
 -- /current directory)
 -- @return table
 local function load_entry_from_file_and(filename, sub_key, action, main_key)
+  filename = strip_cwd(filename)
   local data = load_json_file(filename)
 
-  main_key = main_key or get_dir_key(filename)
+  main_key = main_key or filename
 
   local entry = data[main_key]
   if not entry then
@@ -83,7 +84,7 @@ end
 -- /current directory)
 -- @return boolean
 function M.update_json_file(sub_key, data, main_key)
-  return load_entry_from_file_and(M.get_config_file(), sub_key, function(entry)
+  return load_entry_from_file_and(M.get_config_file(), sub_key, function()
     return true, data
   end, main_key)
 end
@@ -95,21 +96,17 @@ end
 -- /current directory)
 -- @return table
 function M.load_from_json_file(sub_key, main_key)
-  return load_entry_from_file_and(M.get_config_file(), sub_key, function(entry)
+  return load_entry_from_file_and(M.get_config_file(), sub_key, function()
     return false
   end, main_key)
 end
 
-function M.save_watches(plugin_opts)
-  local curbuf = vim.api.nvim_get_current_buf()
-  local filename = vim.api.nvim_buf_get_name(curbuf)
+function M.save_watches(filename, watches, plugin_opts)
+  filename = strip_cwd(filename)
   if M.is_invalid_filename({ file = filename }, plugin_opts) then
     return
   end
-
-  local dapui = require("dapui")
-
-  M.update_json_file("watches", dapui.elements.watches.get(), filename)
+  M.update_json_file("watches", watches, filename)
 end
 
 function M.load_watches()
@@ -117,6 +114,7 @@ function M.load_watches()
 
   local curbuf = vim.api.nvim_get_current_buf()
   local filename = vim.api.nvim_buf_get_name(curbuf)
+  filename = strip_cwd(filename)
   local entry = M.load_from_json_file("watches", filename)
 
   -- remove present watches -> we want only watches pertinent to the file
@@ -129,28 +127,22 @@ function M.load_watches()
   end
 end
 
-function M.save_breakpoints(plugin_opts)
-  local curbuf = vim.api.nvim_get_current_buf()
-  local filename = vim.api.nvim_buf_get_name(curbuf)
+function M.save_breakpoints(filename, breakpoints, plugin_opts)
+  filename = strip_cwd(filename)
   if M.is_invalid_filename({ file = filename }, plugin_opts) then
     return
   end
-
-  local bps = require("dap.breakpoints")
-
-  local bufbps = bps.get(curbuf)
-  --local _,bpsextracted = pairs(bufbps)(bufbps)
-  local bpsextracted = bufbps[curbuf]
-
-  M.update_json_file("breakpoints", bpsextracted, filename)
+  M.update_json_file("breakpoints", breakpoints, filename)
 end
 
 function M.load_breakpoints()
   local bps = require("dap.breakpoints")
 
   local curbuf = vim.api.nvim_get_current_buf()
+  local filename = vim.api.nvim_buf_get_name(curbuf)
+  filename = strip_cwd(filename)
 
-  local entry = M.load_from_json_file("breakpoints", vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf()))
+  local entry = M.load_from_json_file("breakpoints", filename)
   if entry then
     for _, bp in ipairs(entry) do
       bps.set(bp, curbuf, bp.line)

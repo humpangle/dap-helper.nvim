@@ -19,6 +19,7 @@ local dap = require("dap")
 ---@param plugin_opts? daHelper.PluginOpts
 function M.setup(plugin_opts)
   plugin_opts = plugin_opts or {}
+  vim.g.___dap___helper___ = plugin_opts
 
   vim.api.nvim_create_user_command("DapHelperSetLaunchArgs", function(_arg)
     local entry = internals.load_from_json_file("args")
@@ -80,22 +81,6 @@ function M.setup(plugin_opts)
     end
   end, {})
 
-  vim.api.nvim_create_autocmd("BufUnload", {
-    pattern = "*",
-    callback = function(opts)
-      if internals.is_invalid_filename(opts, plugin_opts) then
-        return
-      end
-      internals.save_watches(plugin_opts)
-      if vim.api.nvim_get_option_value("modified", { buf = opts.buf }) then
-        return
-      end
-      -- Only save breakpoints if buffer is unmodified to make sure we save no
-      -- breakpoints that reference non-existing lines
-      internals.save_breakpoints(plugin_opts)
-    end,
-    group = humpangle_dap_helper,
-  })
   vim.api.nvim_create_autocmd("BufReadPost", {
     pattern = "*",
     callback = function(opts)
@@ -108,6 +93,8 @@ function M.setup(plugin_opts)
     end,
     group = humpangle_dap_helper,
   })
+
+  require("dap-helper.dap_patch")
 end
 
 function M.get_launch_args()
