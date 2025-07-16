@@ -21,7 +21,7 @@ function M.setup(plugin_opts)
   plugin_opts = plugin_opts or {}
   vim.g.___dap___helper___ = plugin_opts
 
-  vim.api.nvim_create_user_command("DapHelperSetLaunchArgs", function(_arg)
+  vim.api.nvim_create_user_command("DapHelperSetLaunchArgs", function()
     local entry = internals.load_from_json_file("args")
     local opts = { prompt = "Launch arguments: " }
     -- Check if file exists and data could be loaded
@@ -53,7 +53,7 @@ function M.setup(plugin_opts)
     end)
   end, {})
 
-  vim.api.nvim_create_user_command("DapHelperSetBuildCommand", function(_arg)
+  vim.api.nvim_create_user_command("DapHelperSetBuildCommand", function()
     local entry = internals.load_from_json_file("buildCmd")
     local opts = { prompt = "Build command: " }
     if type(entry) == "string" then
@@ -74,7 +74,7 @@ function M.setup(plugin_opts)
     end)
   end, {})
 
-  vim.api.nvim_create_user_command("DapHelperReset", function(_arg)
+  vim.api.nvim_create_user_command("DapHelperReset", function()
     local succ, str = os.remove(internals.get_config_file())
     if not succ then
       vim.notify("Error resetting the configuration: " .. str, vim.log.levels.ERROR)
