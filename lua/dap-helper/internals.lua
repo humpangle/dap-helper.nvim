@@ -224,4 +224,11 @@ function M.enumerate_project_file_data(filename)
   return ret
 end
 
+function M.clear_json_file_content()
+  local f = io.open(M.compute_json_filename_for_cwd(), "w")
+  if f then
+    f:close()
+  end
+end
+
 return M
