@@ -38,8 +38,11 @@ function M.load_data_from_json_file(json_filename_for_cwd)
   local f = io.open(json_filename_for_cwd, "r")
   local data = {}
   if f then
-    local content = f:read("*a")
+    local content = vim.fn.trim(f:read("*a"))
     f:close()
+    if content == "" then
+      content = "{}"
+    end
     _, data = pcall(vim.json.decode, content, { object = true, array = true })
     assert(data, "Could not decode json for CWD: " .. json_filename_for_cwd)
   end
